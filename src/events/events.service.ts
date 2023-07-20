@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -21,13 +21,25 @@ export class EventsService {
    }
   }
 
-  findAll(eventid:string) {
-    return this.prisma.events.findMany({
+  async findAll() {
+    const events = await this.prisma.events.findMany();
+    if(events.length == 0){
+      throw new HttpException("No events Created Yet",HttpStatus.NOT_FOUND);
+    }
+    return events
+    
+  }
+
+  async findEventById(eventid:string) {
+    const event =  await this.prisma.events.findUnique({
       where:{
         eventId:eventid
       }
-    })
-    
+    })  
+    if(!event){
+      throw new HttpException("No event found with this id",HttpStatus.NOT_FOUND);
+    }
+    return event;
   }
 
   // findOne(id: number) {

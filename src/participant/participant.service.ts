@@ -52,9 +52,11 @@ export class ParticipantService {
     return groupedData;
   }
 
-
   async create(file: any, eventId: string) {
     try {
+      if(!file || !eventId){
+        throw new HttpException("Please provide file and event id",HttpStatus.BAD_REQUEST);
+      }
       const jsonData = await this.convertTojson(file);
       const groupedData = await this.mergeArrayByTeamName(jsonData);
       // console.log(groupedData);
@@ -80,13 +82,11 @@ export class ParticipantService {
         const participantPayload =  teamPayload.map((row) => {
           const eachparticipant = groupedData[row.teamName].map((item) => {
             const participant = new CreateParticipantDto();
-            participant.memberName = item.name;
             participant.name = item.name;
             participant.email = item.email;
             participant.phone = item.phone.toString();
             participant.address = item.address;
             participant.teamId = row['teamId'];
-
             return participant;
           });
           return eachparticipant;
@@ -110,6 +110,18 @@ export class ParticipantService {
     }
   }
 
+  async findTeams(eventId: string) {
+    const teams = await this.prisma.team.findMany({
+      where: {
+        eventId: eventId
+      }
+    });
+    if(teams.length === 0){
+      return {message:"No team found"}
+    }
+    return teams;
+  }
+
   async findAll(teamId) {
     const allParticipant = await this.prisma.participants.findMany({
       where: {
@@ -123,31 +135,63 @@ export class ParticipantService {
   }
 
   async provideProblem(teamid: string, problemDto: Problemdto) {
-    const { problemStatementEasy, problemStatementModerate, problemStatementHard } = problemDto;
+    const { problemStatementEasyId, problemStatementModerateId, problemStatementHardId } = problemDto;
+
+    const easy = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: problemStatementEasyId,
+        problemStatementDifficulty: "EASY"
+      }
+    });
+    if(!easy){
+      return {message:"No easy problem statement found"}
+    }
+    const moderate = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: problemStatementModerateId,
+        problemStatementDifficulty: "MODERATE"
+      }
+    });
+    if(!moderate){
+      return {message:"No moderate problem statement found"}
+    }
+
+    const hard = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: problemStatementHardId,
+        problemStatementDifficulty: "HARD"
+      }
+    });
+
+    if(!hard){
+      return {message:"No hard problem statement found"}
+    }
     const upd = await this.prisma.team.update({
       where: {
         teamId: teamid
       },
       data: {
-        problemStatementEasy: problemStatementEasy,
-        problemStatementModerate: problemStatementModerate,
-        problemStatementHard: problemStatementHard
+        problemStatementEasy: problemStatementHardId,
+        problemStatementModerate: problemStatementHardId,
+        problemStatementHard: problemStatementHardId
       }
     })
-  }
-
-  if(upd){
+    if(!upd){
+      throw new HttpException("Problem statement not provided successfully",HttpStatus.BAD_REQUEST);
+    }
     return {message:"Problemstatement provided successfully"}
-  }
-  
 
-  findOne(id: number) {
-    return `This action returns a #${id} participant`;
   }
 
-  
+  // update(upd){
+  //   return {message:"Problemstatement provided successfully"}
+  // }
 
-  remove(id: number) {
-    return `This action removes a #${id} participant`;
-  }
+
+  // findOne(id: number) {
+  //   return `This action returns a #${id} participant`;
+  // }
+  // remove(id: number) {
+  //   return `This action removes a #${id} participant`;
+  // }
 }

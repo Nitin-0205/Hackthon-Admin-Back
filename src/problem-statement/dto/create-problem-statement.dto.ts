@@ -8,21 +8,17 @@ export class CreateProblemStatementDto {
 
     @IsString()
     @ApiProperty()
-    problemStatementEasy: string;
+    problemStatementTitle: string;
 
     @IsString()
     @ApiProperty()
-    problemStatementModerate: string;
+    problemStatementDescription: string;
 
     @IsString()
     @ApiProperty()
-    problemStatementHard: string;
+    problemStatementDifficulty: string;
 
     @IsString()
     @ApiProperty()
     eventId: string;
-
-    @IsString()
-    @ApiProperty()
-    teamId: string;
 }

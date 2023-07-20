@@ -35,6 +35,7 @@ model events {
   location String
   date String
   team team[]
+  probkemStatement problemStatement[]
 }
 
 model team {
@@ -51,7 +52,6 @@ model team {
 
 model participants{
   id Int @id @default(autoincrement())
-  memberName String 
   name String
   phone String
   email String @unique
@@ -60,3 +60,12 @@ model participants{
   teamId String
 }
 
+model problemStatement{
+  id Int @id @default(autoincrement())
+  problemStatementId String @unique
+  problemStatementTitle String
+  problemStatementDescription String
+  problemStatementDifficulty String
+  problemStatementEvent events @relation(fields: [eventId], references: [eventId])
+  eventId String
+}

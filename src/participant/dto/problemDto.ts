@@ -5,13 +5,13 @@ export class Problemdto{
     
     @ApiProperty()
     @IsString()
-    problemStatementEasy: string;
+    problemStatementEasyId: string;
 
     @ApiProperty()
     @IsString()
-    problemStatementModerate: string;
+    problemStatementModerateId: string;
 
     @ApiProperty()
     @IsString()
-    problemStatementHard: string;
+    problemStatementHardId: string;
 }

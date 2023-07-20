@@ -14,9 +14,14 @@ export class EventsController {
     return this.eventsService.create(createEventDto);
   }
 
-  @Get()
-  findAllTeams(@Param('eventid') eventid: string) {
-    return this.eventsService.findAll(eventid);
+  @Get("getEvents")
+  findAllEvents() {
+    return this.eventsService.findAll();
+  }
+
+  @Get("getEventsbyId/:eventid")
+  findEventById(@Param('eventid') eventid: string) {
+    return this.eventsService.findEventById(eventid);
   }
 
   // @Get(':id')

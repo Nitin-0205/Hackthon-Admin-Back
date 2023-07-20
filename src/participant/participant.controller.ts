@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, HttpException, HttpStatus, ParseFilePipe } from '@nestjs/common';
 import { ParticipantService } from './participant.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
@@ -11,7 +11,7 @@ import { Problemdto } from './dto/problemDto';
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) { }
 
-  @Post()
+  @Post("add")
   @ApiConsumes('multipart/form-data')
   @ApiBody({
 
@@ -52,8 +52,12 @@ export class ParticipantController {
     const jsonData = this.participantService.create(file,eventId);
     return jsonData;
   }
+   
+  @Get("getTeam/:eventId")
+  findTeams(@Param("eventId") eventId: string){
+    return this.participantService.findTeams(eventId);
+  }
 
-  
   @Get("getTeamMembers/:teamId")
   find(@Param("teamId") teamId: string){
     return this.participantService.findAll(teamId);
@@ -64,12 +68,12 @@ export class ParticipantController {
     return this.participantService.provideProblem(teamid, problemdto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.participantService.findOne(+id);
-  }
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.participantService.remove(+id);
-  }
+  // @Get(':id')
+  // findOne(@Param('id') id: string) {
+  //   return this.participantService.findOne(+id);
+  // }
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.participantService.remove(+id);
+  // }
 }

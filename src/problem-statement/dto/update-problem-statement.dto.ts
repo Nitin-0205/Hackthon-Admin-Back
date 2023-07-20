@@ -1,4 +1,20 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateProblemStatementDto } from './create-problem-statement.dto';
+import { ApiProperty } from "@nestjs/swagger";
+import { IsOptional, IsString } from "class-validator";
 
-export class UpdateProblemStatementDto extends PartialType(CreateProblemStatementDto) {}
+export class UpdateProblemStatementDto {
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    problemStatementTitle: string;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    problemStatementDescription: string;
+
+    @IsString()
+    @ApiProperty()
+    @IsOptional()
+    problemStatementDifficulty: string;
+
+}
