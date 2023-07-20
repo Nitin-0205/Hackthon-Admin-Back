@@ -6,7 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { Problemdto } from './dto/problemDto';
+import { Problemdto } from '../problem-statement/dto/problemDto';
 @Controller('participant')
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) { }
@@ -63,9 +63,9 @@ export class ParticipantController {
     return this.participantService.findAll(teamId);
   }
 
-  @Patch('problemstatement/:teamid')
-  provideProblem(@Param('teamid') teamid: string, @Body() problemdto: Problemdto) {
-    return this.participantService.provideProblem(teamid, problemdto);
+  @Patch('updateParticipant/:participantId')
+  updateParticipant(@Param('participantId') participantId: string, @Body() updateParticipant : UpdateParticipantDto) {
+    return this.participantService.updateParticipant(participantId, updateParticipant);
   }
 
   // @Get(':id')

@@ -5,7 +5,7 @@ import * as xlsx from 'xlsx';
 import * as xlsxPopulate from 'xlsx-populate';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { Problemdto } from './dto/problemDto';
+import { Problemdto } from '../problem-statement/dto/problemDto';
 import { TeamDto } from './dto/teamDto';
 @Injectable()
 export class ParticipantService {
@@ -16,7 +16,7 @@ export class ParticipantService {
     const xlsxFile = await xlsx.readFile(file.path);
     const worksheet = xlsxFile.Sheets[xlsxFile.SheetNames[0]];
     const jsonData = xlsx.utils.sheet_to_json(worksheet);
-    
+
     console.log(jsonData);
     return jsonData;
 
@@ -38,7 +38,7 @@ export class ParticipantService {
   }
 
   async mergeArrayByTeamName(arr: any) {
-    const groupedData = {};  
+    const groupedData = {};
     for (const item of arr) {
       const propValue = item['teamName'];
       if (propValue) {
@@ -48,44 +48,48 @@ export class ParticipantService {
         groupedData[propValue].push(item);
       }
     }
-  
+
     return groupedData;
   }
 
   async create(file: any, eventId: string) {
     try {
-      if(!file || !eventId){
-        throw new HttpException("Please provide file and event id",HttpStatus.BAD_REQUEST);
+      if (!file || !eventId) {
+        throw new HttpException("Please provide file and event id", HttpStatus.BAD_REQUEST);
       }
       const jsonData = await this.convertTojson(file);
       const groupedData = await this.mergeArrayByTeamName(jsonData);
-      // console.log(groupedData);
+      console.log(groupedData);
 
-      const teamPayload = Object.keys(groupedData).map((key):TeamDto => {
+      const teamPayload = Object.keys(groupedData).map((key): TeamDto => {
         const teampayload = new TeamDto();
         teampayload.teamName = key;
         teampayload.teamId = uuidv4();
         teampayload.eventId = eventId;
-        teampayload.problemStatementEasy= "";
-        teampayload.problemStatementModerate= "";
-        teampayload.problemStatementHard= "";
+        teampayload.problemStatementEasy = "";
+        teampayload.problemStatementModerate = "";
+        teampayload.problemStatementHard = "";
         return teampayload;
       });
 
       const team = await this.prisma.team.createMany({
-        data:teamPayload,
+        data: teamPayload,
         skipDuplicates: true,
       });
 
 
-      if(team){
-        const participantPayload =  teamPayload.map((row) => {
+      if (team) {
+        const participantPayload = teamPayload.map((row) => {
           const eachparticipant = groupedData[row.teamName].map((item) => {
             const participant = new CreateParticipantDto();
-            participant.name = item.name;
+            participant.participantId = uuidv4();
+            participant.firstname = item.firstname;
+            participant.lastname = item.lastname;
+            participant.aadhar = item.aadhar.toString();
             participant.email = item.email;
             participant.phone = item.phone.toString();
-            participant.address = item.address;
+            participant.telegram_userId = item.telegram_userId.toString();
+            participant.telegram_chat_id = item.telegram_chat_id.toString();
             participant.teamId = row['teamId'];
             return participant;
           });
@@ -93,17 +97,19 @@ export class ParticipantService {
         });
 
         // console.log(participantPayload);
-        const participant = participantPayload.forEach(async(item) => {
-          console.log("items :",item);
-          const part = await  this.prisma.participants.createMany({
+        const participant = participantPayload.forEach(async (item) => {
+          console.log("items :", item);
+          const part = await this.prisma.participants.createMany({
             data: item,
             skipDuplicates: true,
           });
           console.log(part);
         });
       }
-      return { message: "Participant created successfully" }
-      throw new HttpException("Participant created successfully",HttpStatus.OK);
+      // return { message: "Participant created successfully" }
+      throw new HttpException("Participant created successfully", HttpStatus.OK);
+
+
     } catch (err) {
       console.log(err);
       return { message: err.message }
@@ -116,9 +122,10 @@ export class ParticipantService {
         eventId: eventId
       }
     });
-    if(teams.length === 0){
-      return {message:"No team found"}
+    if (teams.length === 0) {
+      return { message: "No team found" }
     }
+
     return teams;
   }
 
@@ -128,64 +135,93 @@ export class ParticipantService {
         teamId: teamId
       }
     });
-    if(allParticipant.length === 0){
-      return {message:"No participant found"}
+    if (allParticipant.length === 0) {
+      return { message: "No participant found" }
     }
-    return allParticipant;
-  }
-
-  async provideProblem(teamid: string, problemDto: Problemdto) {
-    const { problemStatementEasyId, problemStatementModerateId, problemStatementHardId } = problemDto;
-
-    const easy = await this.prisma.problemStatement.findUnique({
+    const result = { ...allParticipant };
+    const team = await this.prisma.team.findUnique({
       where: {
-        problemStatementId: problemStatementEasyId,
-        problemStatementDifficulty: "EASY"
-      }
-    });
-    if(!easy){
-      return {message:"No easy problem statement found"}
-    }
-    const moderate = await this.prisma.problemStatement.findUnique({
-      where: {
-        problemStatementId: problemStatementModerateId,
-        problemStatementDifficulty: "MODERATE"
-      }
-    });
-    if(!moderate){
-      return {message:"No moderate problem statement found"}
-    }
-
-    const hard = await this.prisma.problemStatement.findUnique({
-      where: {
-        problemStatementId: problemStatementHardId,
-        problemStatementDifficulty: "HARD"
-      }
-    });
-
-    if(!hard){
-      return {message:"No hard problem statement found"}
-    }
-    const upd = await this.prisma.team.update({
-      where: {
-        teamId: teamid
+        teamId: teamId
       },
-      data: {
-        problemStatementEasy: problemStatementHardId,
-        problemStatementModerate: problemStatementHardId,
-        problemStatementHard: problemStatementHardId
+      select: {
+        problemStatementEasy: true,
+        problemStatementModerate: true,
+        problemStatementHard: true
       }
-    })
-    if(!upd){
-      throw new HttpException("Problem statement not provided successfully",HttpStatus.BAD_REQUEST);
-    }
-    return {message:"Problemstatement provided successfully"}
+    });
+    const problemStatementEasy = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: team.problemStatementEasy
+      }
+    });
+    const problemStatementModerate = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: team.problemStatementModerate
+      }
+    });
+    const problemStatementHard = await this.prisma.problemStatement.findUnique({
+      where: {
+        problemStatementId: team.problemStatementHard
+      },
 
+    });
+
+    result['problemStatementEasy'] = problemStatementEasy;
+    result['problemStatementModerate'] = problemStatementModerate;
+    result['problemStatementHard'] = problemStatementHard;
+
+    if (allParticipant.length === 0) {
+      return { message: "No participant found" }
+    }
+    return result;
   }
 
-  // update(upd){
-  //   return {message:"Problemstatement provided successfully"}
-  // }
+
+
+  async updateParticipant(participantId: string, updateParticipantDto: UpdateParticipantDto) {
+    if (!participantId) {
+      throw new HttpException("Please provide participant id", HttpStatus.BAD_REQUEST);
+    }
+    const participant = await this.prisma.participants.findUnique({
+      where: {
+        participantId: participantId
+      }
+    });
+    if (!participant) {
+      throw new HttpException("Participant not found", HttpStatus.NOT_FOUND);
+    }
+    if (updateParticipantDto.aadhar) {
+      participant.aadhar = updateParticipantDto.aadhar;
+    }
+    if (updateParticipantDto.email) {
+      participant.email = updateParticipantDto.email;
+    }
+    if (updateParticipantDto.firstname) {
+      participant.firstname = updateParticipantDto.firstname;
+    }
+    if (updateParticipantDto.lastname) {
+      participant.lastname = updateParticipantDto.lastname;
+    }
+    if (updateParticipantDto.phone) {
+      participant.phone = updateParticipantDto.phone;
+    }
+    if (updateParticipantDto.telegram_chat_id) {
+      participant.telegram_chat_id = updateParticipantDto.telegram_chat_id;
+    }
+    if (updateParticipantDto.telegram_userId) {
+      participant.telegram_userId = updateParticipantDto.telegram_userId;
+    }
+    const updateparticipant = await this.prisma.participants.update({
+      where: {
+        participantId: participantId
+      },
+      data: participant
+    });
+    if (!updateparticipant) {
+      throw new HttpException("Participant not updated", HttpStatus.BAD_REQUEST);
+    }
+    return { message: "Problemstatement provided successfully" }
+  }
 
 
   // findOne(id: number) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, HttpException, HttpStatus, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, HttpException, HttpStatus, UploadedFile, Put } from '@nestjs/common';
 import { ProblemStatementService } from './problem-statement.service';
 import { CreateProblemStatementDto } from './dto/create-problem-statement.dto';
 import { UpdateProblemStatementDto } from './dto/update-problem-statement.dto';
@@ -69,8 +69,15 @@ export class ProblemStatementController {
     return this.problemStatementService.update(problemStatId, updateProblemStatementDto);
   }
 
+  @Put("provideProblemStatement")
+  provideProblemStatement(){
+    return this.problemStatementService.provideProblem();
+  }
+
+
   // @Delete(':id')
   // remove(@Param('id') id: string) {
   //   return this.problemStatementService.remove(+id);
   // }
 }
+

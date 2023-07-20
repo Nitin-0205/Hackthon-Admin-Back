@@ -17,16 +17,16 @@ datasource db {
 // }
 
 
-model test{
-  id Int @id @default(autoincrement())
-  OrderDate String 
-  Region String
-  Rep String
-  Item String
-  Units Int
-  Unit_Cost Float
-  Total Float
-}
+// model test{
+//   id Int @id @default(autoincrement())
+//   OrderDate String 
+//   Region String
+//   Rep String
+//   Item String
+//   Units Int
+//   Unit_Cost Float
+//   Total Float
+// }
 model events {
   id Int @id @default(autoincrement())
   eventId String @unique
@@ -52,10 +52,14 @@ model team {
 
 model participants{
   id Int @id @default(autoincrement())
-  name String
-  phone String
+  participantId String @unique
+  firstname String
+  lastname String
+  aadhar String  
   email String @unique
-  address String
+  phone String
+  telegram_userId String
+  telegram_chat_id String
   team team @relation(fields: [teamId], references: [teamId])
   teamId String
 }
