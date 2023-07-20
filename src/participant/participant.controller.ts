@@ -59,7 +59,7 @@ export class ParticipantController {
     return this.participantService.findAll(teamId);
   }
 
-@Patch('problemstatement/:teamid')
+  @Patch('problemstatement/:teamid')
   provideProblem(@Param('teamid') teamid: string, @Body() problemdto: Problemdto) {
     return this.participantService.provideProblem(teamid, problemdto);
   }
@@ -68,9 +68,6 @@ export class ParticipantController {
   findOne(@Param('id') id: string) {
     return this.participantService.findOne(+id);
   }
-
-  
-
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.participantService.remove(+id);

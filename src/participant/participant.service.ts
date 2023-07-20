@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import * as xlsx from 'xlsx';
@@ -6,19 +6,19 @@ import * as xlsxPopulate from 'xlsx-populate';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { Problemdto } from './dto/problemDto';
+import { TeamDto } from './dto/teamDto';
 @Injectable()
 export class ParticipantService {
   constructor(private readonly prisma: PrismaService) { }
 
   async convertTojson(file: any) {
     // const workbook = xlsx.readFile(file.path);
-    const xlsxFile = await xlsx.readFile("./uploads/1689750297801.xlsx");
+    const xlsxFile = await xlsx.readFile(file.path);
     const worksheet = xlsxFile.Sheets[xlsxFile.SheetNames[0]];
     const jsonData = xlsx.utils.sheet_to_json(worksheet);
-    console.log(jsonData)
+    
+    console.log(jsonData);
     return jsonData;
-
-    // console.log("xlsxfile",xlsxFile);
 
     // const workbook = await xlsxPopulate.fromFileAsync(file.path);
     // const worksheet = workbook.sheet(0);
@@ -37,75 +37,73 @@ export class ParticipantService {
     // return result;
   }
 
+  async mergeArrayByTeamName(arr: any) {
+    const groupedData = {};  
+    for (const item of arr) {
+      const propValue = item['teamName'];
+      if (propValue) {
+        if (!groupedData[propValue]) {
+          groupedData[propValue] = [];
+        }
+        groupedData[propValue].push(item);
+      }
+    }
+  
+    return groupedData;
+  }
 
 
   async create(file: any, eventId: string) {
     try {
       const jsonData = await this.convertTojson(file);
+      const groupedData = await this.mergeArrayByTeamName(jsonData);
+      // console.log(groupedData);
 
-      // const teamPayload = jsonData.map((row) => {
-      //   const teampayload = {};
-      //   teampayload['teamName'] = row['teamName'];
-      //   teampayload['teamId'] = uuidv4();
-      //   teampayload['eventId'] = eventId;
-      //   teampayload['problemStatementEasy']= "";
-      //   teampayload['problemStatementModerate']= "";
-      //   teampayload['problemStatementHard']= "";
+      const teamPayload = Object.keys(groupedData).map((key):TeamDto => {
+        const teampayload = new TeamDto();
+        teampayload.teamName = key;
+        teampayload.teamId = uuidv4();
+        teampayload.eventId = eventId;
+        teampayload.problemStatementEasy= "";
+        teampayload.problemStatementModerate= "";
+        teampayload.problemStatementHard= "";
+        return teampayload;
+      });
 
-      //   return teampayload;
-      // });
-      // const team = await this.prisma.team.createMany({
-      //   data: teamPayload,
-      //   skipDuplicates: true,
-      // });
-
-      // const participantPayload = jsonData.map((row) => {
-      //   const participant = {};
-      //   participant["memberName"] = "";
-      //   participant['name'] = row['name'];
-      //   participant['email'] = row['email'];
-      //   participant['phone'] = row['phone'].toString();
-      //   participant['address'] = row['address'];
-      //   participant['teamId'] = row['teamId'];
-
-      //   return participant;
-      // });
-
-      // const participant = await this.prisma.participants.createMany({
-      //   data: participantPayload,
-      //   skipDuplicates: true,
-      // });
-      // if (participant) {
-      //   return { message: 'success' };
-      // }
+      const team = await this.prisma.team.createMany({
+        data:teamPayload,
+        skipDuplicates: true,
+      });
 
 
-      // console.log(jsonData);
-      // const result = jsonData.map((row) => {
-      //   console.log(row)
-      //   const rowData = {};
+      if(team){
+        const participantPayload =  teamPayload.map((row) => {
+          const eachparticipant = groupedData[row.teamName].map((item) => {
+            const participant = new CreateParticipantDto();
+            participant.memberName = item.name;
+            participant.name = item.name;
+            participant.email = item.email;
+            participant.phone = item.phone.toString();
+            participant.address = item.address;
+            participant.teamId = row['teamId'];
 
-      //   // rowData['name'] = row['Name'];
-      //   // rowData['email'] = row['Email'];
-      //   // rowData['phone'] = row['Phone'];
-      //   // rowData['address'] = row['Address'];
-      //   // rowData['city'] = row['City'];
-      //   // rowData['state'] = row['State'];
-      //   // rowData['zip'] = row['Zip'];
-      //   // rowData['country'] = row['Country'];
+            return participant;
+          });
+          return eachparticipant;
+        });
 
-      //   return rowData;
-      // });
-      // console.log(result);
-      // const participant = await this.prisma.test.createMany({
-      //   data: result,
-      //   skipDuplicates: true,
-      // });
-      // console.log(participant);
-      // if (participant) {
-      //   return { message: 'success' };
-      // }
-      // return participant;
+        // console.log(participantPayload);
+        const participant = participantPayload.forEach(async(item) => {
+          console.log("items :",item);
+          const part = await  this.prisma.participants.createMany({
+            data: item,
+            skipDuplicates: true,
+          });
+          console.log(part);
+        });
+      }
+      return { message: "Participant created successfully" }
+      throw new HttpException("Participant created successfully",HttpStatus.OK);
     } catch (err) {
       console.log(err);
       return { message: err.message }
