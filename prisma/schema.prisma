@@ -16,14 +16,6 @@ datasource db {
 //   updated_at DateTime @updatedAt
 // }
 
-// model events {
-//   id Int @id @default(autoincrement())
-//   eventId String @unique
-//   name String
-//   description String
-//   location String
-//   date DateTime
-// }
 
 model test{
   id Int @id @default(autoincrement())
@@ -35,16 +27,36 @@ model test{
   Unit_Cost Float
   Total Float
 }
+model events {
+  id Int @id @default(autoincrement())
+  eventId String @unique
+  name String
+  description String
+  location String
+  date String
+  team team[]
+}
+
+model team {
+  id Int @id @default(autoincrement())
+  teamId String @unique
+  teamName String  @unique
+  problemStatementEasy String 
+  problemStatementModerate String
+  problemStatementHard String
+  teamEvent events @relation(fields: [eventId], references: [eventId])
+  eventId String
+  participants participants[]
+}
 
 model participants{
   id Int @id @default(autoincrement())
+  memberName String 
   name String
-  email String @unique
   phone String
-  address String 
-  city String
-  state String
-  zip String
-  country String
+  email String @unique
+  address String
+  team team @relation(fields: [teamId], references: [teamId])
+  teamId String
 }
 

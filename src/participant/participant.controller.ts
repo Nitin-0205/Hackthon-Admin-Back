@@ -6,6 +6,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { Problemdto } from './dto/problemDto';
 @Controller('participant')
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) { }
@@ -13,12 +14,16 @@ export class ParticipantController {
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiBody({
+
     schema: {
       type: 'object',
       properties: {
         file: {
           type: 'string',
           format: 'binary',
+        },
+        eventId: {
+          type: 'string',
         },
       },
     },
@@ -42,15 +47,21 @@ export class ParticipantController {
       })
     }
   ))
-  create(@UploadedFile() file:any, @Body("eventName") eventName: string) {
-    console.log(file);
-    const jsonData = this.participantService.create(file,eventName);
+  create(@UploadedFile() file:any, @Body("eventId") eventId: string) {
+    console.log(file,eventId);
+    const jsonData = this.participantService.create(file,eventId);
     return jsonData;
   }
 
-  @Get()
-  findAll() {
-    return this.participantService.findAll();
+  
+  @Get("getTeamMembers/:teamId")
+  find(@Param("teamId") teamId: string){
+    return this.participantService.findAll(teamId);
+  }
+
+@Patch('problemstatement/:teamid')
+  provideProblem(@Param('teamid') teamid: string, @Body() problemdto: Problemdto) {
+    return this.participantService.provideProblem(teamid, problemdto);
   }
 
   @Get(':id')
@@ -58,10 +69,7 @@ export class ParticipantController {
     return this.participantService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateParticipantDto: UpdateParticipantDto) {
-    return this.participantService.update(+id, updateParticipantDto);
-  }
+  
 
   @Delete(':id')
   remove(@Param('id') id: string) {
