@@ -139,6 +139,7 @@ export class ParticipantService {
       return { message: "No participant found" }
     }
     const result = { ...allParticipant };
+    result["teamMembers"] =[...allParticipant];
     const team = await this.prisma.team.findUnique({
       where: {
         teamId: teamId

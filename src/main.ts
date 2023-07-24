@@ -17,12 +17,11 @@ async function bootstrap() {
       origin: '*',
       allowedHeaders: '*',
     }
-
   )
   const documentOptions = new DocumentBuilder()
 
-    .setTitle('Participant API')
-    .setDescription('The Participant API description')
+    .setTitle('HACKATHON API')
+    .setDescription('AI Amplify The Participant API description')
     .setVersion('1.0')
     .addTag('Participant')
     .build();

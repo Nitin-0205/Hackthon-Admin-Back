@@ -1,4 +1,4 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, Param, Post } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -9,6 +9,17 @@ export class TelegramController {
 
   @Post()
   async getHello(): Promise<any> {
-    return  this.telegramService.sendMessage(33, "Hello World!");
+    return await  this.telegramService.sendProblem();
   }
+
+  @Post('send')
+  async sendMessage(): Promise<any> {
+    return await this.telegramService.sendMessage('123', 'Hello');
+  }
+  @Post('sendProblem/:TeamId')
+  async sendProblem(@Param("TeamId")TeamId:string): Promise<any> {
+    return await this.telegramService.sendProblemStatement(TeamId);
+  }
+
+
 }
